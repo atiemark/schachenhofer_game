@@ -16,7 +16,7 @@ const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x101018);
 
 // =====================================================
-// FPS RIG (IMPORTANT FIX)
+// FPS RIG (CORRECT)
 // =====================================================
 const camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.1, 1000);
 
@@ -24,12 +24,12 @@ const player = new THREE.Object3D();
 const yaw = new THREE.Object3D();
 const pitch = new THREE.Object3D();
 
+player.position.set(0, 1.8, 5);
+
 yaw.add(pitch);
 pitch.add(camera);
-scene.add(player);
 player.add(yaw);
-
-camera.position.set(0, 1.6, 0);
+scene.add(player);
 
 // =====================================================
 // RENDERER
@@ -55,27 +55,20 @@ document.getElementById('startButton').onclick = () => {
 };
 
 // =====================================================
-// INPUT (DESKTOP)
+// DESKTOP LOOK
 // =====================================================
-const keys = {};
-addEventListener('keydown', e => keys[e.code] = true);
-addEventListener('keyup', e => keys[e.code] = false);
+let locked = false;
 
-// =====================================================
-// MOUSE LOOK (DESKTOP)
-// =====================================================
-let pointerLocked = false;
-
-document.body.addEventListener('click', () => {
+document.addEventListener('click', () => {
   document.body.requestPointerLock();
 });
 
 document.addEventListener('pointerlockchange', () => {
-  pointerLocked = document.pointerLockElement === document.body;
+  locked = document.pointerLockElement === document.body;
 });
 
-addEventListener('mousemove', e => {
-  if (!pointerLocked) return;
+addEventListener('mousemove', (e) => {
+  if (!locked) return;
 
   yaw.rotation.y -= e.movementX * 0.002;
   pitch.rotation.x -= e.movementY * 0.002;
@@ -84,22 +77,22 @@ addEventListener('mousemove', e => {
 });
 
 // =====================================================
-// MOBILE LOOK (RIGHT HALF SCREEN ONLY)
+// MOBILE LOOK (RIGHT SIDE ONLY)
 // =====================================================
-let touchLook = false;
+const lookZone = document.getElementById('lookZone');
+
+let looking = false;
 let lx = 0, ly = 0;
 
-addEventListener('touchstart', e => {
+lookZone.addEventListener('touchstart', (e) => {
   const t = e.touches[0];
-  if (t.clientX > innerWidth * 0.5) {
-    touchLook = true;
-    lx = t.clientX;
-    ly = t.clientY;
-  }
+  looking = true;
+  lx = t.clientX;
+  ly = t.clientY;
 });
 
-addEventListener('touchmove', e => {
-  if (!touchLook) return;
+lookZone.addEventListener('touchmove', (e) => {
+  if (!looking) return;
 
   const t = e.touches[0];
   const dx = t.clientX - lx;
@@ -114,38 +107,44 @@ addEventListener('touchmove', e => {
   ly = t.clientY;
 });
 
-addEventListener('touchend', () => touchLook = false);
+lookZone.addEventListener('touchend', () => looking = false);
 
 // =====================================================
 // JOYSTICK (LEFT SIDE ONLY)
 // =====================================================
-const joystick = document.getElementById('joystick');
+const joystickZone = document.getElementById('joystickZone');
 
 let joy = false;
 let jx = 0, jy = 0;
 let j0x = 0, j0y = 0;
 
-joystick.addEventListener('touchstart', e => {
+joystickZone.addEventListener('touchstart', (e) => {
+  const t = e.touches[0];
   joy = true;
-  j0x = e.touches[0].clientX;
-  j0y = e.touches[0].clientY;
+  j0x = t.clientX;
+  j0y = t.clientY;
 });
 
-joystick.addEventListener('touchmove', e => {
+joystickZone.addEventListener('touchmove', (e) => {
   if (!joy) return;
-  jx = e.touches[0].clientX - j0x;
-  jy = e.touches[0].clientY - j0y;
+
+  const t = e.touches[0];
+  jx = t.clientX - j0x;
+  jy = t.clientY - j0y;
 });
 
-joystick.addEventListener('touchend', () => {
+joystickZone.addEventListener('touchend', () => {
   joy = false;
-  jx = jy = 0;
+  jx = 0;
+  jy = 0;
 });
 
 // =====================================================
-// SHOOT (ONLY RIGHT BUTTON)
+// SHOOT (NO BUBBLE FIX)
 // =====================================================
 const shootBtn = document.getElementById('mobileShoot');
+
+const balls = [];
 
 function shoot() {
   const mesh = new THREE.Mesh(
@@ -154,36 +153,40 @@ function shoot() {
   );
 
   scene.add(mesh);
-  mesh.position.copy(camera.getWorldPosition(new THREE.Vector3()));
+
+  mesh.position.copy(player.position);
 
   const dir = new THREE.Vector3();
   camera.getWorldDirection(dir);
 
   balls.push({
     mesh,
-    velocity: dir.multiplyScalar(20),
+    velocity: dir.multiplyScalar(15),
     radius: 0.15,
     restitution: 0.8,
     friction: 0.98
   });
 }
 
-shootBtn.addEventListener('touchstart', e => {
+shootBtn.addEventListener('touchstart', (e) => {
   e.stopPropagation();
   shoot();
 });
 
-addEventListener('mousedown', shoot);
+addEventListener('mousedown', () => {
+  if (locked) shoot();
+});
 
 // =====================================================
-// FLOOR + BVH
+// INPUT (DESKTOP)
 // =====================================================
-scene.add(new THREE.Mesh(
-  new THREE.PlaneGeometry(100, 100),
-  new THREE.MeshStandardMaterial({ color: 0x444444 })
-));
+const keys = {};
+addEventListener('keydown', e => keys[e.code] = true);
+addEventListener('keyup', e => keys[e.code] = false);
 
-// BVH collider
+// =====================================================
+// BVH COLLIDER
+// =====================================================
 let collider = null;
 
 const loader = new GLTFLoader();
@@ -212,11 +215,6 @@ loader.load('./model.glb', gltf => {
 });
 
 // =====================================================
-// BALLS
-// =====================================================
-const balls = [];
-
-// =====================================================
 // LOOP
 // =====================================================
 const clock = new THREE.Clock();
@@ -225,25 +223,23 @@ function animate() {
   requestAnimationFrame(animate);
   const dt = clock.getDelta();
 
-  // movement speed FIXED
-  const speed = 6;
+  // FIXED SPEED (no more 4x)
+  const SPEED = 4.5;
 
   const forward = (keys['KeyW'] ? 1 : 0) - (keys['KeyS'] ? 1 : 0);
   const side = (keys['KeyD'] ? 1 : 0) - (keys['KeyA'] ? 1 : 0);
 
-  const moveX = side * speed * dt;
-  const moveZ = forward * speed * dt;
+  // CORRECT DIRECTION
+  player.translateZ(-forward * SPEED * dt);
+  player.translateX(side * SPEED * dt);
 
-  player.translateX(moveX);
-  player.translateZ(-moveZ);
-
-  // joystick (mobile)
+  // MOBILE JOYSTICK (SLOWER)
   if (joy) {
-    player.translateX(jx * 0.005);
-    player.translateZ(-jy * 0.005);
+    player.translateX(jx * 0.0015);
+    player.translateZ(-jy * 0.0015);
   }
 
-  // balls physics
+  // BALLS
   for (const b of balls) {
     b.velocity.y -= 9.8 * dt;
 
@@ -281,7 +277,7 @@ function animate() {
 
 animate();
 
-// resize
+// RESIZE
 addEventListener('resize', () => {
   camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
