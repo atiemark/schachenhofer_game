@@ -2,89 +2,84 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8" />
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+<title>BVH FPS</title>
 
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  />
+<style>
+html, body {
+  margin: 0;
+  overflow: hidden;
+  background: black;
+  touch-action: none;
+  font-family: Arial;
+}
 
-  <title>BVH FPS</title>
+canvas { display: block; }
 
-  <style>
+#crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 24px;
+  pointer-events: none;
+  z-index: 10;
+}
 
-    body {
-      margin: 0;
-      overflow: hidden;
-      background: black;
-      font-family: Arial;
-    }
+#hud {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  color: white;
+  background: rgba(0,0,0,0.5);
+  padding: 10px;
+  z-index: 10;
+}
 
-    canvas {
-      display: block;
-    }
+#startScreen {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.95);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  z-index: 20;
+}
 
-    #crosshair {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      color: white;
-      font-size: 24px;
-      pointer-events: none;
-      z-index: 5;
-    }
+button {
+  padding: 14px 28px;
+  font-size: 20px;
+  cursor: pointer;
+}
 
-    #hud {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      color: white;
-      background: rgba(0,0,0,0.5);
-      padding: 10px;
-      z-index: 5;
-    }
+#mobileShoot {
+  position: absolute;
+  bottom: 40px;
+  right: 40px;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  border: 2px solid white;
+  z-index: 50;
+  user-select: none;
+  -webkit-user-select: none;
+}
+</style>
 
-    #startScreen {
-      position: absolute;
-      inset: 0;
-      background: rgba(0,0,0,0.95);
-
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-
-      color: white;
-
-      z-index: 10;
-    }
-
-    button {
-      padding: 12px 24px;
-      font-size: 18px;
-      cursor: pointer;
-    }
-
-  </style>
-
-  <script type="importmap">
-  {
-    "imports": {
-
-      "three":
-        "https://unpkg.com/three@0.165.0/build/three.module.js",
-
-      "three/addons/":
-        "https://unpkg.com/three@0.165.0/examples/jsm/",
-
-      "three-mesh-bvh":
-        "https://unpkg.com/three-mesh-bvh@0.7.6/build/index.module.js"
-
-    }
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.165.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.165.0/examples/jsm/",
+    "three-mesh-bvh": "https://unpkg.com/three-mesh-bvh@0.7.6/build/index.module.js"
   }
-  </script>
-
+}
+</script>
 </head>
 
 <body>
@@ -92,17 +87,17 @@
 <div id="crosshair">+</div>
 
 <div id="hud">
-  WASD Move<br>
-  Mouse Look<br>
-  Click Shoot
+WASD Move<br>
+Shift Sprint<br>
+Click / Tap Shoot
 </div>
 
 <div id="startScreen">
   <h1>BVH FPS</h1>
-  <button id="startButton">
-    Start Game
-  </button>
+  <button id="startButton">Start Game</button>
 </div>
+
+<div id="mobileShoot"></div>
 
 <script type="module" src="main.js"></script>
 
